@@ -1,3 +1,6 @@
+/*
+ утилиты работы со строками
+ */
 
 #include "stringProcessor.h"
 #include "public.h"
@@ -5,7 +8,7 @@
 using namespace std;
 
 /*
- *  определить тип строки ( переменная цель  команда  коментарии )
+ *  определить тип строки (V-переменная T-цель  X-команда  C-коментарии )
  */
 char check_line_type(string in) {
     char rc = '?';
@@ -33,7 +36,7 @@ string trim(string str) {
 }
 
 // проверка на необходимость слияния строк
-
+// функция модифицирует исходную строку
 void more_lines(string & S, ifstream & in) {
 
     if (dbg >= 4) {
@@ -66,6 +69,8 @@ void more_lines(string & S, ifstream & in) {
     if (dbg >= 4) printf("more_lines out:[%s]\n", S.c_str());
 }
 
+// Подстановка всех переменных в строку
+// возвращает новую строку
 string do_substitutions(string const &in, subst_map const &subst) {
     const char *pl1 = "$(";
     const char *pl2 = ")";
@@ -90,6 +95,7 @@ string do_substitutions(string const &in, subst_map const &subst) {
 
 /*
  * режем строку на слова
+ * возврат vector строк
  */
 vector<string>  * split2words(string in) {
     vector<string> *res;
@@ -104,22 +110,4 @@ vector<string>  * split2words(string in) {
     if(dbg>=4) for (unsigned int i=0;i<res->size();i++) 
         printf("split2words:\t%d)[%s]\n",i,res->at(i).c_str()); //Вывод слов на экран
     return res;
-}
-
-target * get_target(string name) {
-    target * response;
-    response = nullptr;
-    if(dbg>=4) printf("поиск цели с именем: [%s] в списке sz=%lu\n",name.c_str(),g_targets.size());
-    for (unsigned int i=0;i<g_targets.size();i++) {
-        if(dbg>=5) printf("проверка элемента: [%s]\n",g_targets.at(i).name->c_str());
-        if(g_targets.at(i).name->compare(name) == 0 ) {
-            response = & g_targets.at(i);
-            if(dbg>=4) printf("цель с именем: [%s] - НАЙДЕНА\n",name.c_str());
-            break;
-        }
-        else { 
-            if(dbg>=5) printf("элемент:[%s] - не подходит, пропустить\n",g_targets.at(i).name->c_str()); 
-        }
-    }
-    return response;
 }

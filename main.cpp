@@ -11,16 +11,21 @@
 using namespace std;
 extern string do_substitutions( string const &in, subst_map const &subst );
 
-
-int dbg=4;  // if(trace) {
-vector<pair <string, string> > g_variables;
-vector<target> g_targets;
-target *current_target=nullptr;
-string g_make_file("Makefile");
-bool g_check_only = false;
+/*
+ * ГЛОБАЛЬНЫЕ ПАРАМЕТРЫ
+ */
+int dbg=4;  // уровень отладки по умолчанию
+vector<pair <string, string> > g_variables;  // список голобальных переменных
+vector<target> g_targets;    // список целей
+target *current_target=nullptr;  // текущая цель на обработке
+string g_make_file("Makefile");  // имя Make-file по умолчанию 
+bool g_check_only = false;     // признак не исполнять а только проверить порядок действий
 string start_target_name("all"); // стартовая цель (меняется через cli полследний параметр 
+// ---------------------
 
-
+/*
+ * ОБРАБОТКА ПЕРЕМЕННОЙ
+ */
 void parse_var(string in) {
     if(dbg>=2) printf("VARIABLE:%s\n", in.c_str());
 //    regex delete_space("\\s*(.*)\\s*");
@@ -36,6 +41,9 @@ void parse_var(string in) {
     g_variables.push_back(make_pair( var_name,var_value));
 }
 
+/*
+ * ОБРАОТКА ЦЕЛИ
+ */
 void parse_target(string in) {
     string target_name;
     string str_depends;
@@ -61,6 +69,9 @@ void parse_target(string in) {
     g_targets.push_back(*t);
 }
 
+/*
+ * ОБРАБОТКА СТРОКИ С SHELL-КОМАНДОЙ
+ */
 void parse_exec(string in) {
     
     string exec(trim(in));
@@ -73,7 +84,9 @@ void parse_exec(string in) {
     }
 }
 
-
+/*
+ ЧТЕНИЕ MAKE-ФАЙЛА 
+ */
 int parse_file() {
     int rc = 0;
     ifstream file(g_make_file.c_str());
@@ -110,6 +123,9 @@ int parse_file() {
     return rc;
 }
 
+/*
+ РАЗБОР ОПЦИЙ КОМАНДНОЙ СТРОКИ
+ */
 void parse_options(int argc, char *argv[]) {
     int rez = 0;
     extern char *optarg;
