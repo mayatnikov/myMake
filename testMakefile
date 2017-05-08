@@ -1,0 +1,44 @@
+include testInclude
+
+INSTALL_DIR=../..
+
+FILES= ../core/graph.o\
+       ../core/str_operation.o\
+       ../core/simple_list.o\
+       ../core/my_malloc.o\
+       c_mpi_writer.o\
+       graph2c++.o
+
+EXECS= graph2c++
+
+#
+CC = cc
+CC_FLAGS=-c
+CC_INCLUDE=./inc
+CCLINKER = ln
+CCLINKER_FLAGS = -v
+LIB_PATH = ./libs
+LIBS = lib1.lib
+
+CCC = gcc
+CCC_FLAGS=-w0
+CCC_INCLUDE=./incCCC
+
+
+all: $(EXECS)
+
+graph2c++: $(FILES)
+	$(CCLINKER) $(CCLINKER_FLAGS) $(LIB_PATH) $(LIBS) -o graph2c++ $(FILES) 
+
+install: all
+	cp -rf graph2c++ $(INSTALL_DIR)/bin
+
+clean:
+	rm -f ./*.o
+	rm -f ./$(EXECS)
+
+%.o: %.c
+	$(CC) $(CC_FLAGS) $(CC_INCLUDE) -I ../.. -I ../core -c $^  -o $@  
+   
+%.o: %.cpp
+	$(CCC) $(CCC_FLAGS) $(CCC_INCLUDE) -I ../.. -I ../core -c $^  -o $@

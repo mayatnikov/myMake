@@ -1,0 +1,13 @@
+#
+CC = cc
+CC_FLAGS=-c
+CC_INCLUDE=./inc
+CCLINKER = ln
+CCLINKER_FLAGS = -v
+LIB_PATH = ./libs
+LIBS = lib1.lib
+
+CCC = gcc
+CCC_FLAGS=-w0
+CCC_INCLUDE=./incCCC
+
