@@ -1,8 +1,4 @@
 /* 
- * File:   public.h
- * Author: vitaly
- *
- * Created on May 6, 2017, 5:30 PM
  */
 
 #ifndef PUBLIC_H

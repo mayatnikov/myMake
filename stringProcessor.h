@@ -22,6 +22,7 @@ void more_lines(string & , ifstream & );
 // std::string do_substitutions(std::string const &, std::subst_map const &);
 vector<string> * split2words(string in);
 target * get_target(string);
+void findAndReplace(string &str, string const &,string const &);
 
 #endif	/* STRINGPROCESSOR_H */
 

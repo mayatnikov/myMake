@@ -1,6 +1,6 @@
 /*
- утилиты работы со строками
- */
+* сервисные функции для работы со строками
+*/
 
 #include "stringProcessor.h"
 #include "public.h"
@@ -110,4 +110,15 @@ vector<string>  * split2words(string in) {
     if(dbg>=4) for (unsigned int i=0;i<res->size();i++) 
         printf("split2words:\t%d)[%s]\n",i,res->at(i).c_str()); //Вывод слов на экран
     return res;
+}
+
+/*
+ * заменить строку ( заменяет значение в исходной строке)
+ * 
+ */
+void findAndReplace(string& source, string const& find, string const& replace) {
+    for (string::size_type i = 0; (i = source.find(find, i)) != string::npos;) {
+        source.replace(i, find.length(), replace);
+        i += replace.length();
+    }
 }

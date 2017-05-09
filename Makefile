@@ -2,7 +2,9 @@ CC=g++
 CCLINKER=$(CC)
 CC_FLAGS=-c -Wall -std=c++11 -g
 LDFLAGS=
-OBJ=main.o target.o stringProcessor.o
+OBJ=main.o \
+ target.o \
+ stringProcessor.o
 EXEC=mymake
 
 all: $(EXEC)

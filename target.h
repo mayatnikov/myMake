@@ -10,6 +10,7 @@ public:
     target(string nm,vector<string> *depends);
     target();
     virtual ~target();
+    string *orig;
     vector<string> *depends;
     vector<string> *commands;
     string *name;

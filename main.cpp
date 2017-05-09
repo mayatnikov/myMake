@@ -60,6 +60,7 @@ void parse_target(string in) {
     depends = split2words(str_depends);
     target *t; // = new target();
     t= new target();
+    t->orig=new string(in);    
     t->name=new string(target_name);
     t->depends=depends;
     current_target=t;
