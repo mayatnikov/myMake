@@ -18,10 +18,10 @@ char check_line_type(string in) {
     regex exec_exp("\t.*");
     regex comment_exp("^#");
 
-    if (regex_match(in, comment_exp)) rc = 'C';
+    if (regex_match(in, exec_exp)) rc = 'X';  // эта прверка ОБЯЗАТЕЛЬНО первая
+    else if (regex_match(in, comment_exp)) rc = 'C';
     else if (regex_match(in, var_exp)) rc = 'V';
     else if (regex_match(in, target_exp)) rc = 'T';
-    else if (regex_match(in, exec_exp)) rc = 'X';
     return rc;
 }
 
@@ -49,9 +49,8 @@ void more_lines(string & S, ifstream & in) {
     bool last_line = false;
     while (!last_line) {
         getline(in, buff);
-        if (dbg >= 4) {
-            printf("buff:[%s]\n", buff.c_str());
-        }
+        log(5,"buff:[%s]\n", buff.c_str());
+        
         if (buff.back() == '\r') buff.pop_back();
         if (buff.back() == '\\') {
             buff.pop_back();
@@ -59,14 +58,13 @@ void more_lines(string & S, ifstream & in) {
             S.append(trim(buff));
             //            more_lines(S,in);
         } else {
-            if (dbg >= 4) {
-                printf("more_lines last append:[%s]\n", buff.c_str());
-            }
+            log(5,"more_lines last append:[%s]\n", buff.c_str());
+            
             S.append(buff);
             last_line = true;
         }
     }
-    if (dbg >= 4) printf("more_lines out:[%s]\n", S.c_str());
+    log(5,"more_lines out:[%s]\n", S.c_str());
 }
 
 // Подстановка всех переменных в строку
@@ -104,10 +102,10 @@ vector<string>  * split2words(string in) {
     do {
         string sub;
         iss >> sub;
-	if(dbg>=5) printf("split2word() substring: [%s]\n",sub.c_str());
+	log(5,"split2word() substring: [%s]\n",sub.c_str());
 	if(sub.size()>0) res->push_back(sub);
     } while (iss);
-    if(dbg>=4) for (unsigned int i=0;i<res->size();i++) 
+    if(dbg>=5) for (unsigned int i=0;i<res->size();i++) 
         printf("split2words:\t%d)[%s]\n",i,res->at(i).c_str()); //Вывод слов на экран
     return res;
 }

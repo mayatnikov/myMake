@@ -27,7 +27,7 @@ string start_target_name("all"); // стартовая цель (меняетс�
  * ОБРАБОТКА ПЕРЕМЕННОЙ
  */
 void parse_var(string in) {
-    if(dbg>=2) printf("VARIABLE:%s\n", in.c_str());
+    log(2,"VARIABLE:%s\n", in.c_str());
 //    regex delete_space("\\s*(.*)\\s*");
 
     string var_name;
@@ -37,7 +37,7 @@ void parse_var(string in) {
         if(dbg>=3)  { printf("\tdelemiter at: %lu ",found); }
         var_name = trim(in.substr(0,found));
         var_value = trim(in.substr(found+1,in.size()));
-    if(dbg>=1)   printf("VAR:\tNAME=[%s]|VAL=[%s]\n",var_name.c_str(),var_value.c_str()); 
+    log(1,"VAR:\tNAME=[%s]\tVAL=[%s]\n",var_name.c_str(),var_value.c_str()); 
     g_variables.push_back(make_pair( var_name,var_value));
 }
 
@@ -49,12 +49,10 @@ void parse_target(string in) {
     string str_depends;
     vector<string> *depends;
     
-    if (dbg >= 2) printf("TARGET:%s\n", in.c_str());
+    log(2,"parse_target: TARGET:%s\n", in.c_str());
     size_t found;
     found = in.find_first_of(":");
-    if (dbg >= 3) {
-        printf("\tdelemiter at: %lu\n", found);
-    }
+    log(3,"parse_target:\t delemiter at: %lu\n", found);
     target_name = trim(in.substr(0, found));
     str_depends = trim(in.substr(found + 1, in.size()));
     depends = split2words(str_depends);
@@ -64,7 +62,7 @@ void parse_target(string in) {
     t->name=new string(target_name);
     t->depends=depends;
     current_target=t;
-    if(dbg>=1) printf("TARGET: name=[%s] depends=[%s]\n",
+    log(1,"parse_target:\t name=[%s]\t depends=[%s]\n",
             current_target->name->c_str(),
             str_depends.c_str());
     g_targets.push_back(*t);
@@ -76,12 +74,13 @@ void parse_target(string in) {
 void parse_exec(string in) {
     
     string exec(trim(in));
-    if(dbg>=4) printf("EXEC in:[%s]\n", in.c_str());
-    if(dbg>=4) printf("EXEC out:[%s]\n", exec.c_str());
+    log(4,"parse_exec: in=[%s]\n", in.c_str());
+    log(4,"parse_exec: out=[%s]\n", exec.c_str());
     
     if(current_target!=nullptr) {
         current_target->commands->push_back(exec.c_str());
-        if(dbg >= 1) printf("EXEC push command:[%s]-->%s\n", exec.c_str(),current_target->name->c_str());
+        log(1,"parse_exec:\t command=[%s]\t target=[%s]\n", 
+                exec.c_str(),current_target->name->c_str());
     }
 }
 
@@ -95,15 +94,15 @@ int parse_file() {
     string S; //  read line
 
     while (std::getline(file, S)) {
-        if(dbg>=4) { printf("--------- start new line ----------\n"); }
+        log(4,"parse_file: --------- start new line ----------%s\n",""); 
         if (S.back() == '\r') S.pop_back();
         if (S.back() == '\\') { S.pop_back(); more_lines(S,file); }
 // сделать замену переменных
         subst_map substitutions ( &g_variables[0], &g_variables[0] + g_variables.size() );
     
-        if(dbg>=5) printf("subst in:[%s]\n",S.c_str());
+        log(5,"parse_file: subst in:[%s]\n",S.c_str());
         S = do_substitutions( S, substitutions );
-        if(dbg>=5) printf("subst out:[%s]\n",S.c_str());
+        log(5,"parse_file: subst out:[%s]\n",S.c_str());
 // ---        
         
         switch (check_line_type(S)) {
@@ -153,7 +152,7 @@ void parse_options(int argc, char *argv[]) {
     }
     if (argc > optind) { 
         start_target_name = string(argv[argc - 1]);
-        if(dbg>=2) printf("target:%s \n", argv[argc - 1]); 
+        log(2,"target:%s \n", argv[argc - 1]); 
     }
     else printf("Unknown target!\n");
     if(dbg>=2) {
@@ -170,10 +169,10 @@ int main(int argc, char *argv[]) {
     int rc=0;
     
     
-    if(dbg>=3) printf("---> старт обработки make-файла\n");
+    log(3,"---> старт обработки make-файла, формрование модели обработки %s ...\n","");
     parse_file();
         
-    if(dbg>=3) printf("---> старт обработки правил\n");
+    log(3,"---> старт обработки правил ...%s \n","");
     target * start_target;
     if((start_target= get_target(start_target_name))!= nullptr) {
        start_target->make(); 

@@ -9,6 +9,15 @@
 #include <map>
 #include "target.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+  #define log(lvl,format, args...) if(dbg>=lvl)fprintf (stdout, format, args)
+#else
+  #define log(...) ((void)0) //strip out PRINT instructions from code
+#endif 
+
+
 extern int dbg;  // if(trace) {
 extern std::vector<std::pair <std::string, std::string> > g_variables;
 extern std::vector<target> g_targets;

@@ -41,7 +41,7 @@ bool target::make() {
     bool resp = false;
     struct stat fileInfo;
     time_t file_time;
-    if (dbg >= 4) printf("make: Start for target:[%s]\n", orig->c_str());
+    log(4,"make: Start for target:[%s]\n", orig->c_str());
 
     // запомнить время создания цели (0 - если это не файл)
     if (stat(name->c_str(), &fileInfo) == 0) {
@@ -50,16 +50,20 @@ bool target::make() {
 
     // проверка всех зависимостей и их выполнение (рекурсия)
     for (unsigned int i = 0; i < depends->size(); i++) {
+        
         target * tg2 = get_target(depends->at(i)); // найти цель в полном списке
         if (tg2 == nullptr) {
          //   exit(-1); // не понятно что делать с этой целью
-        } else resp = tg2->make();
+        } else  {
+            log(5,"старт вложенного target name = %s\n", tg2->name->c_str());
+            resp = tg2->make();
+        }
     }
 
     // выполнить все команды данной цели
-    if (dbg >= 4) printf("make: target name:[%s] exec-list sz:[%lu]\n", name->c_str(), commands->size());
+    log(4,"make: target name:[%s] exec-list sz:[%lu]\n", name->c_str(), commands->size());
     for (unsigned int i = 0; i < commands->size(); i++) {
-        if (dbg >= 4) printf("make: target:[%s] exec:[%s]\n", name->c_str(), commands->at(i).c_str());
+        log(4,"make: target:[%s] exec:[%s]\n", name->c_str(), commands->at(i).c_str());
     /* ---------------------------------------------------------------------- */    
         
         printf(">\tsystem(\"%s\");\n",commands->at(i).c_str() );
@@ -80,7 +84,7 @@ target * get_target_with_template(string name, target templ) {
 
     target * resp = nullptr;
 
-    if(dbg>=5) printf("get_target_with_template: Cтарт проверки по шаблону---------------\n");
+    log(5,"get_target_with_template: Cтарт проверки по шаблону---------------%s\n","");
     regex file_ext_exp("(\\w+)\\.(.+)");
     smatch mfile;
     regex_search(name, mfile, file_ext_exp);
@@ -91,7 +95,7 @@ target * get_target_with_template(string name, target templ) {
     regex_search(s1, mtarget, target_exp);
 
     if(templ.depends->size()==0) {
-        if(dbg>=5) printf("get_target_with_template: зависимостей нет - пропускаем\n");
+        log(5,"get_target_with_template: зависимостей нет - пропускаем%s\n","");
         return resp; // пропустить цель без зависимостей
     } 
     
@@ -104,29 +108,29 @@ target * get_target_with_template(string name, target templ) {
             dtarget.size() == 3 &&
             mtarget[1].str().compare(0, 1, "%") == 0 &&
             mtarget[2].str().compare(mfile[2].str()) == 0) { // найден подходящий шаблон
-        if (dbg >= 5) printf("get_target_with_template: Шаблон:[%s] и файл: [%s] - совпадают\n", 
+        log(5,"get_target_with_template: Шаблон:[%s] и файл: [%s] - совпадают\n", 
                 templ.orig->c_str(), name.c_str());
         string outFile = name; // @$
         string srcFile = mfile[1].str() + "." + dtarget[2].str(); // ^$
-        if (dbg >= 5) printf("get_target_with_template: Шаблон: подстановки var(@$)=%s var(^$)=%s\n", srcFile.c_str(), outFile.c_str());
+        log(5,"get_target_with_template: Шаблон: подстановки var(@$)=%s var(^$)=%s\n", srcFile.c_str(), outFile.c_str());
         // создаем новый target из шаблона
         resp = new target();
         resp->name = new string(outFile);
         resp->depends->push_back(srcFile);
-        resp->orig = new string("-?-");  
+        resp->orig = new string((outFile+":"+srcFile+" # template gen" ).c_str());  
         for (unsigned int i = 0; i < templ.commands->size(); i++) {
             string exec = templ.commands->at(i);
-            if (dbg >= 5) printf("get_target_with_template: шаблон: in exec %s\n", exec.c_str());
+            log(5,"get_target_with_template: шаблон: in exec %s\n", exec.c_str());
             findAndReplace(exec, string("$^"), srcFile);
             findAndReplace(exec, string("$@"), outFile);
-            if (dbg >= 5) printf("get_target_with_template: шаблон: out exec %s\n", exec.c_str());
+            log(5,"get_target_with_template: шаблон: out exec %s\n", exec.c_str());
             resp->commands->push_back(exec);
-            if (dbg >= 4) printf("get_target_with_template: Создана цель по шаблону %s\n", 
+            log(4,"get_target_with_template: Создана цель по шаблону %s\n", 
                     (outFile+":"+srcFile+" > "+ exec).c_str());
         }
  //       g_targets.push_back(*resp);
     } else {
-        if(dbg>=5) printf("get_target_with_template: Шаблон: [%s] и файл: [%s] - НЕ совпадают\n", 
+        log(5,"get_target_with_template: Шаблон: [%s] и файл: [%s] - НЕ совпадают\n", 
                 templ.orig->c_str(), name.c_str());
     }
     return resp;
@@ -140,19 +144,20 @@ target * get_target_with_template(string name, target templ) {
 target * get_target(string name) {
     target * response;
     response = nullptr;
-    if(dbg>=4) printf("поиск цели с именем: [%s] в списке sz=%lu\n",name.c_str(),g_targets.size());
+    log(4,"get_target: поиск цели с именем: [%s] в списке sz=%lu\n",name.c_str(),g_targets.size());
     for (unsigned int i=0;i<g_targets.size();i++) {
-        if(dbg>=5) printf("проверка элемента: [%s]\n",g_targets.at(i).name->c_str());
+        log(5,"get_target: проверка элемента: [%s]\n",g_targets.at(i).name->c_str());
         if(g_targets.at(i).name->compare(name) == 0 ) {
             response = & g_targets.at(i);
-            if(dbg>=4) printf("цель с именем: [%s] - НАЙДЕНА\n",name.c_str());
-            break;
+            log(4,"get_target: цель с именем: [%s] - НАЙДЕНА\n",name.c_str());
+            break;  // выход при первом совпадении
         }
         else if((response = get_target_with_template(name,g_targets.at(i) ))!=nullptr){
-            if(dbg>=5) printf("цель с именем: [%s] - создана по шаблону\n",response->name->c_str());
+            log(5,"get_target: цель с именем: [%s] - создана по шаблону\n",response->name->c_str());
+            break;  // выход при первом совпадении
         }
         else { 
-            if(dbg>=5) printf("элемент:[%s] - не подходит, пропустить\n",g_targets.at(i).name->c_str()); 
+            log(5,"get_target: элемент:[%s] - не подходит, пропустить\n",g_targets.at(i).name->c_str()); 
         }
     }
     return response;
