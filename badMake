@@ -1,8 +1,8 @@
 include testInclude
 
-BASE = core
+BASE = ../core
 
-INSTALL_DIR=distr
+INSTALL_DIR=$(BASE)/distr
 
 FILES= $(BASE)/graph.o\
        $(BASE)/str_operation.o\
@@ -13,10 +13,14 @@ FILES= $(BASE)/graph.o\
 
 EXECS= graph2c++
 
-all: $(EXECS) 	
+all: A
 
-$(EXECS): $(FILES)
-	$(CCLINKER) $(CCLINKER_FLAGS) $(LIB_PATH)/$(LIBS) -o $(EXECS) $(FILES) 
+A : B
+
+B : all
+
+graph2c++: $(FILES)
+	$(CCLINKER) $(CCLINKER_FLAGS) $(LIB_PATH)/$(LIBS) -o $(BASE)/graph2c++ $(FILES) 
 
 install: all
 	mkdir -p $(INSTALL_DIR)/bin
@@ -27,7 +31,7 @@ clean:
 	rm -f ./$(EXECS)
 
 %.o: %.c
-	$(CC) $(CC_FLAGS) -I $(CC_INCLUDE) -I ../.. -I core -c $^  -o $@  
+	$(CC) $(CC_FLAGS) -I $(CC_INCLUDE) -I ../.. -I ../core -c $^  -o $@  
    
 %.o: %.cpp
-	$(CCC) $(CCC_FLAGS) -I $(CCC_INCLUDE) -I ../.. -I core -c $^  -o $@
+	$(CCC) $(CCC_FLAGS) -I $(CCC_INCLUDE) -I ../.. -I ../core -c $^  -o $@

@@ -13,15 +13,17 @@ using namespace std;
 char check_line_type(string in) {
     char rc = '?';
 
-    regex var_exp("^[\\W]+\\s*=\\s*.+"); // допустимы пробелы
+    regex var_exp("^[\\w]+\\s*=\\s*.*"); // допустимы пробелы
     regex target_exp("^[\\W]+:.*");
     regex exec_exp("\t.*");
+    regex include_exp("^include\\s+.+");
     regex comment_exp("^#");
 
     if (regex_match(in, exec_exp)) rc = 'X';  // эта прверка ОБЯЗАТЕЛЬНО первая
     else if (regex_match(in, comment_exp)) rc = 'C';
     else if (regex_match(in, var_exp)) rc = 'V';
     else if (regex_match(in, target_exp)) rc = 'T';
+    else if (regex_match(in, include_exp)) rc = 'I';
     return rc;
 }
 

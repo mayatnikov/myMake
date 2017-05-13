@@ -13,9 +13,10 @@ public:
     string *orig;
     vector<string> *depends;
     vector<string> *commands;
+    target *parent;
     string *name;
     bool make();
-    bool checkCicleDep(std::string to_check);
+    bool checkCicleDep();
 private:
 };
 

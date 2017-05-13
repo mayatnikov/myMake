@@ -25,6 +25,8 @@ extern std::string g_make_file;
 extern bool g_check_only;
 
 typedef std::map< std::string, std::string > subst_map;
+int parse_file(string );
+time_t getFileTime(string );
 
 
 #endif	/* PUBLIC_H */

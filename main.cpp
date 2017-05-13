@@ -14,7 +14,7 @@ extern string do_substitutions( string const &in, subst_map const &subst );
 /*
  * ГЛОБАЛЬНЫЕ ПАРАМЕТРЫ
  */
-int dbg=4;  // уровень отладки по умолчанию
+int dbg=0;  // уровень отладки по умолчанию
 vector<pair <string, string> > g_variables;  // список голобальных переменных
 vector<target> g_targets;    // список целей
 target *current_target=nullptr;  // текущая цель на обработке
@@ -36,6 +36,7 @@ void parse_var(string in) {
         found = in.find_first_of("=");
         if(dbg>=3)  { printf("\tdelemiter at: %lu ",found); }
         var_name = trim(in.substr(0,found));
+        
         var_value = trim(in.substr(found+1,in.size()));
     log(1,"VAR:\tNAME=[%s]\tVAL=[%s]\n",var_name.c_str(),var_value.c_str()); 
     g_variables.push_back(make_pair( var_name,var_value));
@@ -62,7 +63,7 @@ void parse_target(string in) {
     t->name=new string(target_name);
     t->depends=depends;
     current_target=t;
-    log(1,"parse_target:\t name=[%s]\t depends=[%s]\n",
+    log(1,"parse_target:\t target=[%s]\t depends=[%s]\n",
             current_target->name->c_str(),
             str_depends.c_str());
     g_targets.push_back(*t);
@@ -85,12 +86,24 @@ void parse_exec(string in) {
 }
 
 /*
+ * ОБРАБОТКА СТРОКИ С INCLUDE [какой то файл]
+ */
+int parse_include(string in) {
+    
+    string file_name(trim(trim(in).substr(7)));
+    
+    log(4,"parse_include: include=[%s]\n", file_name.c_str());
+    return parse_file(file_name);
+
+}
+
+/*
  ЧТЕНИЕ MAKE-ФАЙЛА 
  */
-int parse_file() {
+int parse_file(string file_name) {
     int rc = 0;
-    ifstream file(g_make_file.c_str());
-    vector<string> v; //Вектор строк
+    ifstream file(file_name.c_str());
+//    vector<string> v; //Вектор строк
     string S; //  read line
 
     while (std::getline(file, S)) {
@@ -118,8 +131,12 @@ int parse_file() {
             case 'X': // command (exec)
                 parse_exec(S);
                 break;
+            case 'I': // command (exec)
+                parse_include(S);
+                break;
         }
     }
+    file.close();
     return rc;
 }
 
@@ -169,13 +186,14 @@ int main(int argc, char *argv[]) {
     int rc=0;
     
     
-    log(3,"---> старт обработки make-файла, формрование модели обработки %s ...\n","");
-    parse_file();
+    log(3,"---> старт обработки make-файла, формирование модели обработки %s ...\n","");
+    parse_file(g_make_file);
         
     log(3,"---> старт обработки правил ...%s \n","");
     target * start_target;
     if((start_target= get_target(start_target_name))!= nullptr) {
-       start_target->make(); 
+        start_target->parent = nullptr;  // это начало цепочки
+        start_target->make(); 
     }
     return rc;
 };

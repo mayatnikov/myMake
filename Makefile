@@ -1,7 +1,7 @@
 CC=g++
 CCLINKER=$(CC)
 CC_FLAGS=-c -Wall -std=c++11 -g
-LDFLAGS=-v
+LDFLAGS=
 OBJ=main.o \
  target.o \
  stringProcessor.o

@@ -2,12 +2,11 @@
 CC = cc
 CC_FLAGS=-c
 CC_INCLUDE=./inc
-CCLINKER = ln
-CCLINKER_FLAGS = -v
-LIB_PATH = ./libs
-LIBS = lib1.lib
+CCLINKER = gcc
+CCLINKER_FLAGS =
+LIB_PATH = libs
+LIBS = lib1.a
 
-CCC = gcc
-CCC_FLAGS=-w0
+CCC = g++
+CCC_FLAGS=-c -Wall -std=c++11 -g
 CCC_INCLUDE=./incCCC
-
