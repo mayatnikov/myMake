@@ -19,15 +19,15 @@ char check_line_type(string in) {
     regex include_exp("^include\\s+.+");
     regex comment_exp("^#");
 
-    if (regex_match(in, exec_exp)) rc = 'X';  // эта прверка ОБЯЗАТЕЛЬНО первая
-    else if (regex_match(in, comment_exp)) rc = 'C';
-    else if (regex_match(in, var_exp)) rc = 'V';
-    else if (regex_match(in, target_exp)) rc = 'T';
-    else if (regex_match(in, include_exp)) rc = 'I';
+    if (regex_match(in, exec_exp)) rc = 'X';  // eXecute эта проверка ОБЯЗАТЕЛЬНО первая
+    else if (regex_match(in, comment_exp)) rc = 'C'; // Comment
+    else if (regex_match(in, var_exp)) rc = 'V'; // Variable
+    else if (regex_match(in, target_exp)) rc = 'T'; // Target
+    else if (regex_match(in, include_exp)) rc = 'I'; // Include
     return rc;
 }
 
-//  удаление лишних пробелов слева и справа
+//  удаление лишних пробелов и табуляции слева и справа
 
 string trim(string str) {
     size_t first = str.find_first_not_of("\t ");
@@ -53,7 +53,7 @@ void more_lines(string & S, ifstream & in) {
         getline(in, buff);
         log(5,"buff:[%s]\n", buff.c_str());
         
-        if (buff.back() == '\r') buff.pop_back();
+        if (buff.back() == '\r') buff.pop_back(); // приф формате файлов WIN \r\n
         if (buff.back() == '\\') {
             buff.pop_back();
             S.append(" ");
@@ -114,6 +114,7 @@ vector<string>  * split2words(string in) {
 
 /*
  * заменить строку ( заменяет значение в исходной строке)
+ *   ( исх_строка, ищем, заменяем
  * 
  */
 void findAndReplace(string& source, string const& find, string const& replace) {

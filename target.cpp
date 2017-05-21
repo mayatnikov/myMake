@@ -27,7 +27,7 @@ target::~target() {
  */
 
 /*
- * проверка наличия циклической зависимости = true, если есть зависимость от самого себя
+ * проверка наличия циклической зависимости = true, если есть повторение зависимости в цепочке
  */
 bool target::checkCicleDep() {
     bool rc = false;
@@ -43,11 +43,12 @@ bool target::checkCicleDep() {
 }
 
 /*
+ * ОСНОВНАЯ ФУНКЦИЯ
  * рекурсивно выполнить все цели, начиная с заданной в запросе 
  */
 
 bool target::make() {
-    bool resp = false;
+    bool resp = false;  // true - если что то это make делал 
     struct stat fileInfo;
     time_t file_time;
     log(4, "make: Start for target:[%s]\n", orig->c_str());
@@ -62,16 +63,29 @@ bool target::make() {
 
         target * tg2 = get_target(depends->at(i)); // найти цель в полном списке
         if (tg2 == nullptr) {
-            //   exit(-1); // не понятно что делать с этой целью
+            log(5,"WARINING: такая цель не найдена %s\n",depends->at(i).c_str());
+            // TODO проверить, а может это файл
+            time_t dep_time = getFileTime(depends->at(i));
+            if(dep_time==0L) { // и файла тоже не нашлось
+                log(0,"ERROR: не найденная зависимость для:[%s]\n",depends->at(i).c_str());
+                exit(-1);
+            }
+            else if(dep_time > file_time ) {
+                log(5,"make: цель-[%s] зависимость от-[%s] - требует исполнения команд\n",name->c_str(),depends->at(i).c_str());
+                resp=true; // признак зависимость требует выполнения команд
+            }
+            // сейчас всякий мусор просто игнорируется
+            // а если и файла нет - то ВЫХОД!
+            //   exit(-1); // не понятно что делать такой зависимости нет!
         } else {
             tg2->parent = this;
             if(tg2->checkCicleDep()==true) { exit(-1); }
             log(5, "старт вложенного target name = %s\n", tg2->name->c_str());
-            resp = tg2->make();
+            resp = tg2->make();  // true если там что то выполнялось, то есть вложенная цель что то обновила(выполнила)
         }
     }
     
-    // после выполнения всех вложенных целей выполнить все команды данной цели
+    // после выполнения всех вложенных целей 
     // выполнить все команды данной цели
     log(4, "make: target name:[%s] exec-list sz:[%lu]\n", name->c_str(), commands->size());
     for (unsigned int i = 0; i < commands->size(); i++) {
@@ -80,11 +94,15 @@ bool target::make() {
 
         log(1,">\tsystem(\"%s\");\n", commands->at(i).c_str());
         if(!g_check_only) {
-        /* system("....);  //    ВЫПОЛНИТЬ ЦЕЛЕВУЮ КОМАНДУ
+        /* ********************************************************************
+         *     ВЫПОЛНИТЬ ЦЕЛЕВУЮ КОМАНДУ
         ---------------------------------------------------------------------- */
             log(0,"myMake: %s\n",commands->at(i).c_str());
             int rc = system(commands->at(i).c_str());
-            if(rc!=0) fprintf(stderr,">make: ERROR при выполнении:[%s]\n", commands->at(i).c_str());
+            if(rc!=0) { // если команда выполнена с ошибкой - прекратить работу make
+                fprintf(stderr,">make: ERROR при выполнении:[%s]\n", commands->at(i).c_str());
+                exit(-1);
+            }
         }
         resp = true; // этот make что то сделал
     }
@@ -92,9 +110,9 @@ bool target::make() {
 }
 
 /*
- * проверка на цель типа %.o:%.cpp
- * 
- * возврат вновь сконструированной цели 
+ * проверка на цель типа %.o:%.cpp - шаблон
+ * создание новой цели
+ * возврат вновь созданной цели 
  */
 target * get_target_with_template(string name, target templ) {
 
@@ -108,7 +126,7 @@ target * get_target_with_template(string name, target templ) {
 
     // target: отделяем имя от расширения --> mtarget
     regex target_exp("(\\%+)\\.(.+)");
-    smatch mtarget;
+    smatch mtarget; // matcher для выделения target
     string s1(templ.name->c_str());
     regex_search(s1, mtarget, target_exp);
 
@@ -116,8 +134,11 @@ target * get_target_with_template(string name, target templ) {
         log(5, "get_target_with_template: зависимостей нет - пропускаем%s\n", "");
         return resp; // пропустить цель без зависимостей
     }
-// depends: считаем что списка тут не бывает! берем первый элемент и отделяем имя от расширения --> dtarget 
-    smatch mdepends;
+// depends: считаем что списка тут не бывает! берем первый элемент 
+//    и отделяем имя от расширения  
+// TODO заменить на обработку списка
+// -------------------------------------    
+    smatch mdepends; // matcher для выделения depends
     string s2(templ.depends->at(0).c_str());
     regex_search(s2, mdepends, target_exp);
     log(5, "get_target_with_template: Target:[%s . %s] Depends:[%s . %s] File:[%s . %s]\t",
@@ -125,10 +146,10 @@ target * get_target_with_template(string name, target templ) {
                               mdepends[1].str().c_str(),mdepends[2].str().c_str(),
                               mfile[1].str().c_str(),  mfile[2].str().c_str());
 
-    if (mfile.size() == 3 &&
-            mtarget.size() == 3 &&
-            mdepends.size() == 3 &&
-            mtarget[1].str().compare(0, 1, "%") == 0 &&
+    if (mfile.size() == 3 &&  // если похож на шаблон
+            mtarget.size() == 3 &&  // если похож на шаблон
+            mdepends.size() == 3 &&  // если похож на шаблон
+            mtarget[1].str().compare(0, 1, "%") == 0 &&  // так должно быть в шаблоне
             mtarget[2].str().compare(mfile[2].str()) == 0) { // найден подходящий шаблон
         log(5," Шаблон подходит - пробуем%s\n","");        
         string outFile = name; // @$
@@ -154,17 +175,21 @@ target * get_target_with_template(string name, target templ) {
                 findAndReplace(exec, string("$^"), srcFile);
                 findAndReplace(exec, string("$@"), outFile);
                 log(5, "get_target_with_template: шаблон: out exec %s\n", exec.c_str());
+                // TODO здесь при сканировании списка хотя бы один файл оказался моложе цели
                 if(getFileTime(outFile) > getFileTime(srcFile) ) {
                     log(4, "File %s up to date - пропустить исполнение\n", outFile.c_str());
                 }
                 else {
-                    resp->commands->push_back(exec);
+                    resp->commands->push_back(exec);  // занести команду в список исполнения
                     log(4, "get_target_with_template: Создана цель по шаблону %s\n",
                             (outFile + ":" + srcFile + " > " + exec).c_str());
                 }
             }
+        // вообщето можно тут создать target который потом будет использоваться 
+        // в последующих зависимостях
+        // для этого надо просто результат resp положить в голобальный список target'ов
+        // но сделать зацикливаниие становится давольно легко    
         }
-        //       g_targets.push_back(*resp);
     } else {
         log(5, " Шаблон: [%s] и файл: [%s] - НЕ совпадают, пропускаем\n",
                 templ.orig->c_str(), name.c_str());
@@ -174,6 +199,7 @@ target * get_target_with_template(string name, target templ) {
 
 /*
  * получить из глобального списка ссылку на цель по ее имени
+ * попробовать поискать цель не по имени,а по шаблону %.o : %.c или похожему
  * nullptr - если не найдено
  * 
  */
@@ -181,9 +207,9 @@ target * get_target(string name) {
     target * response;
     response = nullptr;
     log(4, "get_target: поиск цели с именем: [%s] в списке sz=%lu\n", name.c_str(), g_targets.size());
-    for (unsigned int i = 0; i < g_targets.size(); i++) {
+    for (unsigned int i = 0; i < g_targets.size(); i++) {  // цикл по списку всех целей
         log(5, "get_target: проверка элемента: [%s]\n", g_targets.at(i).name->c_str());
-        if (g_targets.at(i).name->compare(name) == 0) {
+        if (g_targets.at(i).name->compare(name) == 0) { // цель найдена
             response = &g_targets.at(i);
             log(4, "get_target: цель с именем: [%s] - НАЙДЕНА\n", name.c_str());
             break; // выход при первом совпадении
