@@ -14,7 +14,7 @@ char check_line_type(string in) {
     char rc = '?';
 
     regex var_exp("^[\\w]+\\s*=\\s*.*"); // допустимы пробелы
-    regex target_exp("^[\\W]+:.*");
+    regex target_exp("^[\\W\\w]+:.*");
     regex exec_exp("\t.*");
     regex include_exp("^include\\s+.+");
     regex comment_exp("^#");
@@ -44,8 +44,8 @@ void more_lines(string & S, ifstream & in) {
     if (dbg >= 4) {
         printf("more_lines in:[%s]\n", S.c_str());
     }
-    char last_char;
-    last_char = S.back();
+//    char last_char;
+//    last_char = S.back();
     // S.pop_back();
     string buff;
     bool last_line = false;
@@ -91,6 +91,14 @@ string do_substitutions(string const &in, subst_map const &subst) {
     }
     out << in.substr(pos, string::npos);
     return out.str();
+}
+
+bool findVar(string name) {
+       subst_map subst ( &g_variables[0], &g_variables[0] + g_variables.size() );
+       bool find=true;
+        subst_map::const_iterator subst_it = subst.find(name);
+        if (subst_it == subst.end()) find=false;
+        return find;
 }
 
 /*

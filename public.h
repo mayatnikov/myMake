@@ -23,6 +23,7 @@ extern std::vector<std::pair <std::string, std::string> > g_variables;
 extern std::vector<target> g_targets;
 extern std::string g_make_file;
 extern bool g_check_only;
+bool find_target(string name);
 
 typedef std::map< std::string, std::string > subst_map;
 int parse_file(string );

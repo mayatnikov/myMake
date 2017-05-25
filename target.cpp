@@ -47,8 +47,8 @@ bool target::checkCicleDep() {
  * рекурсивно выполнить все цели, начиная с заданной в запросе 
  */
 
-bool target::make() {
-    bool resp = false;  // true - если что то это make делал 
+bool target::make() {   
+    bool resp = false;  // true - если что то это make делал
     struct stat fileInfo;
     time_t file_time;
     log(4, "make: Start for target:[%s]\n", orig->c_str());
@@ -98,13 +98,12 @@ bool target::make() {
          *     ВЫПОЛНИТЬ ЦЕЛЕВУЮ КОМАНДУ
         ---------------------------------------------------------------------- */
             log(0,"myMake: %s\n",commands->at(i).c_str());
-            int rc = system(commands->at(i).c_str());
-            if(rc!=0) { // если команда выполнена с ошибкой - прекратить работу make
-                fprintf(stderr,">make: ERROR при выполнении:[%s]\n", commands->at(i).c_str());
-                exit(-1);
-            }
+                int rc = system(commands->at(i).c_str());
+                if(rc!=0) { // если команда выполнена с ошибкой - прекратить работу make
+                    fprintf(stderr,">make: ERROR при выполнении:[%s]\n", commands->at(i).c_str());
+                    exit(-1);
+                }
         }
-        resp = true; // этот make что то сделал
     }
     return resp; // true если что то делал
 }
@@ -222,6 +221,18 @@ target * get_target(string name) {
     }
     return response;
 }
+
+bool find_target(string name) {
+    bool find=false;
+    for (unsigned int i = 0; i < g_targets.size(); i++) {  // цикл по списку всех целей
+        if (g_targets.at(i).name->compare(name) == 0) { // цель найдена
+            find=true;
+            break; // выход при первом совпадении
+        } 
+    }
+    return find;
+}
+
 
 /*
  * определить время создания файла ( 0L - файл не найден )

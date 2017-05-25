@@ -33,6 +33,7 @@ void parse_var(string in) {
 
     string var_name;
     string var_value;
+    
     size_t found;
         found = in.find_first_of("=");
         if(dbg>=3)  { printf("\tdelemiter at: %lu ",found); }
@@ -40,11 +41,16 @@ void parse_var(string in) {
         
         var_value = trim(in.substr(found+1,in.size()));
     log(1,"VAR:\tNAME=[%s]\tVAL=[%s]\n",var_name.c_str(),var_value.c_str()); 
+    if(findVar(var_name)) {
+        log(0,"ERROR: дублирование имени переменной= [%s]\n",var_name.c_str());
+        exit(-1);
+    }
     g_variables.push_back(make_pair( var_name,var_value));
+    
 }
 
 /*
- * ОБРАОТКА ЦЕЛИ
+ * ОБРАБОТКА ЦЕЛИ
  * конструирует новый target 
  * и запоминает его в глобальном vector
  */
@@ -53,11 +59,16 @@ void parse_target(string in) {
     string str_depends;
     vector<string> *depends;
     
+    
     log(2,"parse_target: TARGET:%s\n", in.c_str());
     size_t found;
     found = in.find_first_of(":");
     log(3,"parse_target:\t delemiter at: %lu\n", found);
     target_name = trim(in.substr(0, found));
+    if(target_name.c_str()[0] != '%' && find_target(target_name)) {
+        log(0,"ERROR: дублирование цели [%s]\n",target_name.c_str());
+        exit(-1);
+    }
     str_depends = trim(in.substr(found + 1, in.size()));
     depends = split2words(str_depends);
     target *t; // = new target();
@@ -121,7 +132,7 @@ int parse_file(string file_name) {
         if (S.back() == '\\') { S.pop_back(); more_lines(S,file); }
 // сделать замену переменных
         subst_map substitutions ( &g_variables[0], &g_variables[0] + g_variables.size() );
-    
+
         log(5,"parse_file: subst in:[%s]\n",S.c_str());
         S = do_substitutions( S, substitutions );
         log(5,"parse_file: subst out:[%s]\n",S.c_str());

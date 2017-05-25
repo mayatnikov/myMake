@@ -23,6 +23,6 @@ void more_lines(string & , ifstream & );
 vector<string> * split2words(string in);
 target * get_target(string);
 void findAndReplace(string &str, string const &,string const &);
-
+bool findVar(string name);
 #endif	/* STRINGPROCESSOR_H */
 
