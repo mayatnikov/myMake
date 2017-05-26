@@ -49,6 +49,7 @@ bool target::checkCicleDep() {
 
 bool target::make() {   
     bool resp = false;  // true - если что то это make делал
+    bool mustExec=false;
     struct stat fileInfo;
     time_t file_time;
     log(4, "make: Start for target:[%s]\n", orig->c_str());
@@ -58,6 +59,7 @@ bool target::make() {
         file_time = mktime(localtime(&fileInfo.st_mtime));
     } else file_time = 0L;
 
+    if(depends->size() == 0 ) mustExec=true;  // при отсутствии зависимостей команды выполняются всегда
     // проверка всех зависимостей и их выполнение (рекурсия)
     for (unsigned int i = 0; i < depends->size(); i++) {
 
@@ -70,9 +72,9 @@ bool target::make() {
                 log(0,"ERROR: не найденная зависимость для:[%s]\n",depends->at(i).c_str());
                 exit(-1);
             }
-            else if(dep_time > file_time ) {
+            else if(dep_time > file_time ) {  // цель старше зависимости
                 log(5,"make: цель-[%s] зависимость от-[%s] - требует исполнения команд\n",name->c_str(),depends->at(i).c_str());
-                resp=true; // признак зависимость требует выполнения команд
+                mustExec=true; // признак зависимость требует выполнения команд
             }
             // сейчас всякий мусор просто игнорируется
             // а если и файла нет - то ВЫХОД!
@@ -81,7 +83,8 @@ bool target::make() {
             tg2->parent = this;
             if(tg2->checkCicleDep()==true) { exit(-1); }
             log(5, "старт вложенного target name = %s\n", tg2->name->c_str());
-            resp = tg2->make();  // true если там что то выполнялось, то есть вложенная цель что то обновила(выполнила)
+            mustExec = tg2->make();  // true если там что то выполнялось, то есть вложенная цель что то обновила(выполнила)
+             mustExec=true;
         }
     }
     
@@ -92,12 +95,12 @@ bool target::make() {
         log(2, "make: target:[%s] exec:[%s]\n", name->c_str(), commands->at(i).c_str());
         /* ---------------------------------------------------------------------- */
 
-        log(1,">\tsystem(\"%s\");\n", commands->at(i).c_str());
-        if(!g_check_only) {
+        if(!g_check_only && mustExec) {
         /* ********************************************************************
          *     ВЫПОЛНИТЬ ЦЕЛЕВУЮ КОМАНДУ
         ---------------------------------------------------------------------- */
             log(0,"myMake: %s\n",commands->at(i).c_str());
+            resp=true;
                 int rc = system(commands->at(i).c_str());
                 if(rc!=0) { // если команда выполнена с ошибкой - прекратить работу make
                     fprintf(stderr,">make: ERROR при выполнении:[%s]\n", commands->at(i).c_str());
